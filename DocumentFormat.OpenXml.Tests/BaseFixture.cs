@@ -30,20 +30,34 @@ using System.Xml;
 using DocumentFormat.OpenXml.Packaging;
 using Xunit;
 
-// to run the X64 tests:
-// packages\xunit.runner.console.2.0.0\tools\xunit.console DocumentFormat.OpenXml.Tests.64\bin\Debug\DocumentFormat.OpenXml.Tests.dll
-
-#if X64
-namespace DocumentFormat.OpenXml.Tests.X64
-#else
 namespace DocumentFormat.OpenXml.Tests
-#endif
 {
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     [SuppressMessage("ReSharper", "VirtualMemberNeverOverriden.Global")]
     public class BaseFixture : IDisposable
     {
-        protected const string TestFilesPath = @"..\..\..\TestFiles";
+        protected static string s_TestFileLocation = null;
+
+        public static string TestFilesPath
+        {
+            get
+            {
+                if (s_TestFileLocation != null)
+                    return s_TestFileLocation;
+                // find the directory, wherever it may be, to get to the TestFiles directory
+                var dir = new DirectoryInfo(Environment.CurrentDirectory);
+                while (true)
+                {
+                    if (dir.Name == "DocumentFormat.OpenXml.Tests" || dir.Name == "DocumentFormat.OpenXml.WB.Tests")
+                        break;
+                    dir = dir.Parent;
+                }
+                dir = dir.Parent; // go up one more, to the parent of the above dirs
+                var testDataStorageDirInfo = new DirectoryInfo(Path.Combine(dir.FullName, "TestFiles/"));
+                s_TestFileLocation = testDataStorageDirInfo.FullName;
+                return s_TestFileLocation;
+            }
+        }
 
         protected BaseFixture()
         {
@@ -71,7 +85,8 @@ namespace DocumentFormat.OpenXml.Tests
             if (path == null)
                 throw new ArgumentNullException("path");
 
-            return Path.Combine(TestFilesPath, Path.GetFileName(path));
+            var combinedPath = Path.Combine(TestFilesPath, Path.GetFileName(path));
+            return combinedPath;
         }
 
         /// <summary>
@@ -165,12 +180,12 @@ namespace DocumentFormat.OpenXml.Tests
             }
         }
 
-        protected static void RemoveFiles(string path, string searchPattern)
-        {
-            var directory = new DirectoryInfo(path);
-            foreach (var file in directory.GetFiles(searchPattern))
-                file.Delete();
-        }
+        //protected static void RemoveFiles(string path, string searchPattern)
+        //{
+        //    var directory = new DirectoryInfo(path);
+        //    foreach (var file in directory.GetFiles(searchPattern))
+        //        file.Delete();
+        //}
 
         public void Dispose()
         {
